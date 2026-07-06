@@ -1,0 +1,334 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Lecteur audio — Nathan</title>
+<style>
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body { font-family: Arial, sans-serif; background: #0F0F23; color: #E2E8F0; min-height: 100vh; }
+.topnav { background: #1A1A2E; padding: 8px 16px; text-align: right; border-bottom: 1px solid #2D2D4E; }
+.topnav a { color: #FFD43B; font-size: 13px; font-weight: bold; text-decoration: none; }
+.header { background: linear-gradient(135deg,#0C8599 0%,#1971C2 100%); padding: 16px 20px; text-align: center; }
+.header h1 { font-size: 19px; font-weight: bold; color: white; }
+.header p  { font-size: 12px; color: rgba(255,255,255,.75); margin-top: 3px; }
+.wrap { max-width: 520px; margin: 0 auto; padding: 16px 14px; }
+
+.lang-tabs { display: flex; gap: 8px; margin-bottom: 14px; }
+.tab { flex: 1; padding: 10px 4px; border: 2px solid #2D2D4E; border-radius: 8px;
+       background: #1A1A2E; cursor: pointer; font-size: 13px; font-weight: bold;
+       text-align: center; line-height: 1.3; color: #64748B; font-family: Arial, sans-serif; }
+.tab.fr { border-color:#E8590C; } .tab.en { border-color:#7048E8; } .tab.es { border-color:#2F9E44; }
+.tab.fr.on { background:#E8590C; color:white; } .tab.en.on { background:#7048E8; color:white; } .tab.es.on { background:#2F9E44; color:white; }
+
+.voice-row { display:flex; align-items:center; gap:8px; margin-bottom:12px; }
+.voice-row label { font-size:12px; color:#64748B; white-space:nowrap; }
+.voice-row select { flex:1; padding:7px 10px; font-size:13px; border:1px solid #2D2D4E;
+                    border-radius:8px; background:#1A1A2E; color:#E2E8F0; font-family:Arial,sans-serif; }
+
+.seance-sel { width:100%; padding:9px 11px; font-size:14px; border:1px solid #2D2D4E;
+              border-radius:8px; background:#1A1A2E; color:#E2E8F0;
+              font-family:Arial,sans-serif; margin-bottom:12px; }
+
+.box { background:#1A1A2E; border:1px solid #2D2D4E; border-radius:12px;
+       padding:20px; margin-bottom:12px; min-height:72px; }
+.counter { font-size:12px; color:#64748B; margin-bottom:8px; }
+.dots { font-size:28px; color:#2D2D4E; letter-spacing:10px; font-weight:bold; }
+.progress-wrap { background:#0F0F23; border-radius:6px; height:4px; margin-top:12px; overflow:hidden; }
+.progress-fill { height:100%; border-radius:6px; background:#1971C2; width:0%; transition:width .1s linear; }
+
+.controls { display:flex; gap:8px; margin-bottom:12px; }
+.btn { padding:10px 13px; border:1px solid #2D2D4E; border-radius:8px; background:#1A1A2E;
+       cursor:pointer; font-size:16px; color:#E2E8F0; font-family:Arial,sans-serif; transition:.15s; }
+.btn:hover { background:#2D2D4E; }
+.btn-play { flex:1; font-size:14px; font-weight:bold; background:#1971C2; color:white; border-color:#1971C2; }
+.btn-play:hover { background:#1461A8; }
+.btn-play.on { background:#2F9E44; border-color:#2F9E44; }
+
+.speed-row { display:flex; align-items:center; gap:10px; margin-bottom:12px; }
+.speed-row label { font-size:12px; color:#64748B; white-space:nowrap; }
+.speed-row input { flex:1; accent-color:#1971C2; }
+.spv { font-size:12px; min-width:36px; color:#94A3B8; }
+
+.status { font-size:13px; padding:9px 12px; border-radius:8px; min-height:36px;
+          line-height:1.45; margin-bottom:10px; }
+.st-ok   { background:#0B4D20; color:#86EFAC; }
+.st-err  { background:#4D0B0B; color:#FCA5A5; }
+.st-info { background:#0D3A6B; color:#93C5FD; }
+.st-warn { background:#4D3800; color:#FDE68A; }
+
+.help { background:#1A1A2E; border:1px solid #2D2D4E; border-radius:10px;
+        padding:12px 14px; font-size:12px; color:#64748B; line-height:1.7;
+        margin-bottom:12px; display:none; }
+.help strong { color:#94A3B8; }
+</style>
+</head>
+<body>
+<div class="topnav"><a href="index.html">← Accueil</a></div>
+<div class="header">
+  <h1>🔊 Lecteur audio — Nathan</h1>
+  <p>Écoute chaque phrase, écris-la dans ton cahier, puis clique ⏭</p>
+</div>
+<div class="wrap">
+  <div class="lang-tabs">
+    <button class="tab fr on" id="t-fr" onclick="setLang('fr')">🇫🇷 Français<br><small style="font-weight:normal">Dictée</small></button>
+    <button class="tab en"    id="t-en" onclick="setLang('en')">🇬🇧 Anglais<br><small style="font-weight:normal">Écoute</small></button>
+    <button class="tab es"    id="t-es" onclick="setLang('es')">🇪🇸 Espagnol<br><small style="font-weight:normal">Écoute</small></button>
+  </div>
+
+  <div class="voice-row">
+    <label>Voix :</label>
+    <select id="voice-sel" onchange="pickVoice()"></select>
+  </div>
+
+  <select class="seance-sel" id="sel-seance" onchange="setSeance()"></select>
+
+  <div class="box">
+    <div class="counter" id="counter">Phrase 1 / 5</div>
+    <div class="dots"    id="phrase">• • • •</div>
+    <div class="progress-wrap"><div class="progress-fill" id="prog"></div></div>
+  </div>
+
+  <div class="controls">
+    <button class="btn" onclick="go(-1)">⏮</button>
+    <button class="btn btn-play" id="play-btn" onclick="togglePlay()">▶ Écouter</button>
+    <button class="btn" onclick="go(1)">⏭</button>
+  </div>
+
+  <div class="speed-row">
+    <label>Vitesse</label>
+    <input type="range" id="speed" min="0.5" max="1.1" step="0.05" value="0.85"
+           oninput="document.getElementById('spv').textContent=parseFloat(this.value).toFixed(2)+'x'">
+    <span class="spv" id="spv">0.85x</span>
+  </div>
+
+  <div class="status st-info" id="status">Chargement des voix…</div>
+
+  <div class="help" id="help">
+    <strong>Aucune voix trouvée pour cette langue.</strong><br>
+    Sur Windows : Paramètres → Heure et langue → Parole → <em>Voix de synthèse</em> → Ajouter des voix → cherche "Français", "English", "Español".<br>
+    Sur Mac : Préférences Système → Accessibilité → Contenu spoken → Voix → Personnaliser.<br>
+    Redémarre Chrome après l'installation des voix.
+  </div>
+</div>
+
+<script>
+/* ─── DONNÉES ─────────────────────────────────────────── */
+var DATA = {
+  fr:{lc:"fr",items:{
+    s1:{t:"Séance 1 — Jeux vidéo",p:["Hier soir, mes amis sont venus chez moi pour une soirée jeux vidéo.","Nous avons choisi un jeu d'aventure plein de défis.","Les missions que nous avons terminées nous ont beaucoup amusés.","Ma sœur s'est installée à côté de moi pour regarder la partie.","La bande originale que j'ai achetée hier est géniale."]},
+    s2:{t:"Séance 2 — Cinéma",p:["Nous nous sommes installés dans le canapé pour regarder un film d'animation.","Les acteurs que j'ai préférés dans ce film jouent aussi dans une série.","Ma mère a trouvé les effets spéciaux impressionnants.","La musique du film, que le compositeur a créée spécialement, est magnifique.","Les spectateurs se sont levés pour applaudir à la fin de la séance."]},
+    s3:{t:"Séance 3 — Musique",p:["Les chansons que ce groupe a composées sont devenues des tubes.","Nous nous sommes rendus au concert en avance pour avoir une bonne place.","L'artiste a salué la foule avant de commencer son concert.","Les guitares que les musiciens ont accordées résonnaient parfaitement.","Mes cousines se sont déguisées pour aller à ce concert costumé."]},
+    s4:{t:"Séance 4 — E-sport",p:["Les joueurs se sont entraînés chaque jour pour ce championnat.","L'équipe a gagné la finale qu'elle avait tant attendue.","Nous avons regardé en direct la compétition que nos champions ont remportée.","Mon frère et moi nous sommes connectés en même temps pour jouer ensemble.","Les stratégies qu'ils ont inventées leur ont permis de gagner."]},
+    s5:{t:"Séance 5 — Séries",p:["Les épisodes que nous avons regardés hier nous ont captivés jusqu'au bout.","Cette actrice s'est révélée incroyable dans son nouveau rôle.","Le réalisateur a tourné plusieurs scènes dans des décors impressionnants.","Les critiques que la presse a publiées étaient très positives.","Nous nous sommes abonnés à cette plateforme pour suivre la nouvelle saison."]},
+    s6:{t:"Séance 6 — Concert",p:["Le groupe a annoncé une tournée qu'il préparait depuis longtemps.","Les places que nous avons réservées étaient au premier rang.","Ma cousine s'est maquillée avant d'aller au concert.","Le chanteur a remercié le public qui l'a soutenu pendant toute sa carrière.","Les lumières se sont allumées dès que la musique a commencé."]},
+    s7:{t:"Séance 7 — Speedrun",p:["Le joueur a battu le record que personne n'avait égalé depuis des années.","Les techniques qu'il a maîtrisées lui ont fait gagner de précieuses secondes.","Nous nous sommes entraînés ensemble pour améliorer notre temps.","La vidéo qu'il a publiée a été vue des millions de fois.","Les spectateurs ont applaudi la performance qu'ils venaient de voir."]},
+    s8:{t:"Séance 8 — Tournage",p:["Les techniciens ont installé des décors que personne n'avait vus avant la sortie du film.","L'équipe s'est relayée jour et nuit pour terminer le tournage à temps.","Le réalisateur a choisi des acteurs qu'il admirait depuis longtemps.","Les scènes que les cascadeurs ont tournées étaient particulièrement dangereuses.","Nous nous sommes émerveillés devant les effets spéciaux du film."]},
+    s9:{t:"Séance 9 — Festival",p:["Les organisateurs ont annulé le concert que la pluie menaçait.","La scène que les techniciens ont montée tenait sur deux étages.","Nous nous sommes abrités sous une tente pendant l'averse.","Les festivaliers ont attendu patiemment malgré l'orage qui approchait.","La chanteuse s'est excusée pour le retard avant de monter sur scène."]},
+    s10:{t:"Séance 10 — Compétition",p:["Les adversaires que notre équipe a affrontés étaient très expérimentés.","Nous nous sommes préparés mentalement avant la grande finale.","L'arbitre a vérifié les règles que personne ne connaissait vraiment.","La stratégie que nous avions choisie nous a permis de remonter le score.","Les supporters se sont levés d'un bond après la victoire."]},
+    s11:{t:"Séance 11 — Avant-première",p:["Les spectateurs sont arrivés en avance pour l'avant-première du film.","L'actrice principale a signé des autographes que les fans avaient attendus toute la journée.","Nous nous sommes installés au balcon pour mieux voir l'écran.","Le réalisateur a présenté son film avant la projection.","La critique que les journalistes ont publiée le lendemain était élogieuse."]},
+    s12:{t:"Séance 12 — OST",p:["La bande-son que le compositeur a créée plonge le joueur dans l'univers du jeu.","Les mélodies que nous avons entendues sont restées gravées dans nos mémoires.","Mon ami s'est abonné à une plateforme pour réécouter ses musiques préférées.","Les albums que ces artistes ont sortis cette année ont battu tous les records.","Nous nous sommes retrouvés pour enregistrer notre propre générique."]},
+    s13:{t:"Séance 13 — Doublage",p:["Le comédien a enregistré les dialogues que le réalisateur avait sélectionnés.","Les voix que nous entendons dans les films étrangers sont celles des doubleurs.","Mon acteur préféré s'est formé pendant plusieurs années au conservatoire.","Les séries que j'ai regardées cette semaine étaient entièrement doublées en français.","L'équipe s'est réunie pour synchroniser les voix avec les mouvements des lèvres."]},
+    s14:{t:"Séance 14 — Quête",p:["Le héros a découvert les paroles de la prophétie que le vieux sage lui avait transmises.","Hannah s'est aventurée seule vers la rivière aux poissons dorés.","Les villageois se sont réunis pour aider Tomek dans sa quête périlleuse.","L'amulette qu'il a trouvée lui a donné le courage de continuer.","Les épreuves qu'il a surmontées ont transformé Tomek à jamais."]},
+    s15:{t:"Séance 15 — Animation",p:["Les animateurs ont dessiné les personnages que le réalisateur avait imaginés.","Le studio s'est spécialisé dans les films d'animation à grand spectacle.","Les décors que nous avons admirés avaient été créés numériquement.","Mon frère s'est passionné pour l'animation japonaise depuis son enfance.","Les figurines que les fans ont collectionnées valent aujourd'hui une fortune."]},
+    s16:{t:"Séance 16 — BD manga",p:["Les planches que le dessinateur a terminées seront publiées le mois prochain.","Mon frère s'est plongé dans cette saga manga pendant tout l'été.","Les bulles de dialogue que les auteurs ont rédigées sont souvent très courtes.","L'éditrice s'est réjouie du succès de sa nouvelle collection.","Les albums que j'ai découverts chez mon cousin sont devenus mes préférés."]},
+    s17:{t:"Séance 17 — Réseaux",p:["Les vidéos que cet influenceur a publiées ont dépassé les dix millions de vues.","Son frère s'est inscrit sur plusieurs plateformes pour développer sa communauté.","Les commentaires que nous avons laissés ont reçu de nombreuses réponses.","Cette créatrice s'est distinguée par son originalité et son humour bienveillant.","Les tendances que les algorithmes ont sélectionnées changent très rapidement."]},
+    s18:{t:"Séance 18 — IA",p:["Les chercheurs ont conçu un programme qui a résolu des problèmes complexes.","L'intelligence artificielle que nous avons utilisée pour ce projet a appris seule.","Mon père s'est intéressé aux avancées de la robotique grâce à un documentaire.","Les algorithmes que les ingénieurs ont mis au point améliorent nos applications.","L'entreprise s'est lancée dans la création d'une IA spécialisée dans la médecine."]},
+    s19:{t:"Séance 19 — Superhéros",p:["Les super-pouvoirs que ce héros a acquis lui permettent de voler et d'être invulnérable.","Sa rivale s'est entraînée pendant des années pour lui tenir tête.","Les combats que nous avons suivis dans la série étaient incroyablement spectaculaires.","L'équipe de tournage s'est surpassée pour réaliser ces effets visuels.","Les costumes que les stylistes ont confectionnés sont désormais exposés dans un musée."]},
+    s20:{t:"Séance 20 — Rentrée",p:["Les fournitures que ma mère a achetées remplissent déjà mon nouveau cartable.","Mon frère s'est réconcilié avec ses anciens camarades avant la rentrée.","Les professeurs que nous avons rencontrés lors de la journée de présentation sont bienveillants.","La classe s'est reformée avec quelques nouveaux élèves venus d'autres établissements.","Les devoirs que j'ai préparés cet été me semblent désormais plus accessibles."]},
+    s21:{t:"Séance 21 — Bilan",p:["Les progrès que j'ai accomplis cet été me rendent fier de moi.","Ma famille s'est réjouie de me voir travailler en autonomie chaque jour.","Les dictées que nous avons réalisées ont amélioré mon orthographe durablement.","Mon frère s'est proposé pour me tester sur les corrigés après chaque séance.","Les compétences que j'ai développées me seront très utiles en quatrième."]}
+  }},
+  en:{lc:"en",items:{
+    s4:{t:"Séance 4 — Esports",p:["Esports are video game competitions where professional players compete in teams.","Some tournaments offer millions of dollars in prizes.","Popular esports games include football simulators, strategy games, and shooting games.","Many young players dream of becoming professional gamers, but it takes years of daily practice."]},
+    s5:{t:"Séance 5 — Binge-watching",p:["Many teenagers watch their favourite shows on streaming platforms after school.","A new season usually has between eight and ten episodes.","Some viewers like to watch several episodes in one evening — this is called binge-watching.","Doctors recommend taking breaks and not watching screens too late at night."]},
+    s6:{t:"Séance 6 — Concert tour",p:["Last summer, my favourite band went on tour and performed in my city.","Thousands of fans came to see the show, and everyone sang along to every song.","The concert lasted almost three hours, with amazing lights and special effects.","It was one of the best nights of my life."]},
+    s7:{t:"Séance 7 — Speedrunning",p:["Speedrunning is when gamers try to finish a video game as fast as possible.","Some players study the game for months to find shortcuts and secret tricks.","World records are shared online for everyone to see.","Thousands of people watch live speedrun events every year."]},
+    s8:{t:"Séance 8 — Special effects",p:["Modern movies often use computer-generated images, also called CGI.","Before computers, filmmakers used models, costumes, and clever camera tricks.","Today, an action movie can take years to finish because the visual effects are so complex.","Many young people dream of working in this exciting industry."]},
+    s9:{t:"Séance 9 — Music festivals",p:["Music festivals usually take place outdoors during the summer.","Several bands perform on different stages over two or three days.","Many people camp nearby in tents for the whole weekend.","Fans love the atmosphere and the chance to discover new artists."]},
+    s10:{t:"Séance 10 — Esports team",p:["Professional esports teams train together for many hours every day.","Coaches analyse each match to find mistakes and improve strategy.","Some famous players earn a living entirely from competitions and sponsorships.","Esports is now considered a real career path for talented young gamers."]},
+    s11:{t:"Séance 11 — Film premiere",p:["Last month, I went to the premiere of a new superhero movie with my cousin.","Many fans waited outside the cinema for hours to see the actors arrive.","Photographers took pictures on the red carpet.","After the screening, everyone clapped for almost a minute."]},
+    s12:{t:"Séance 12 — Road trip",p:["Last August, my family and I went on a road trip across the country.","We drove for two weeks, stopping in different cities and national parks.","The best moment was watching a sunrise from a mountain top.","Everyone should do a road trip at least once in their life."]},
+    s13:{t:"Séance 13 — Smart home",p:["Smart home technology is changing the way we live.","Smart speakers can answer your questions, play music, and control your lights.","Smart thermostats learn your habits and help save energy.","These devices collect data about you, but they are becoming more affordable."]},
+    s14:{t:"Séance 14 — AI",p:["Artificial intelligence, or AI, is everywhere today.","It can write text, create art, and help doctors detect diseases faster.","But AI also brings risks: some jobs may disappear as machines become smarter.","Experts say young people should learn to work with AI, not against it."]},
+    s15:{t:"Séance 15 — Climate change",p:["Climate change is one of the biggest challenges of our time.","Burning fossil fuels and deforestation are the main causes of global warming.","We are seeing more frequent weather events such as heatwaves, floods, and storms.","Young people can make a difference by reducing waste and using public transport."]},
+    s16:{t:"Séance 16 — Video games history",p:["Video games became popular in the nineteen seventies and eighties.","Home consoles allowed people to play for the first time in their living rooms.","Today, games teach skills like teamwork, problem-solving, and creativity.","The gaming industry is now worth more than cinema and music combined."]},
+    s17:{t:"Séance 17 — World War One",p:["World War One started in nineteen fourteen and lasted four years.","Soldiers dug long trenches in the ground and lived there in terrible conditions.","The war, also called The Great War, ended in nineteen eighteen.","Over twenty million people died in total."]},
+    s18:{t:"Séance 18 — Sleep",p:["Teenagers need between eight and ten hours of sleep every night.","While you sleep, your brain stores memories and your body repairs itself.","Without enough sleep, you may have poor concentration and mood swings.","Avoid screens at least one hour before going to bed."]},
+    s19:{t:"Séance 19 — Back to school",p:["Starting a new school year can feel daunting, but there are ways to prepare.","Organise your bag and schedule the night before — it saves time in the morning.","Always write your homework down immediately so you do not forget.","If a subject is difficult, ask questions and review a little every day."]},
+    s20:{t:"Séance 20 — Summer review",p:["This summer I worked on French, maths, history, science, English and Spanish.","The hardest part was learning to write structured, argued answers.","Now I feel more confident than before going back to school.","My advice: work a little every day, step by step, and it adds up."]},
+    s21:{t:"Séance 21 — Letter to myself",p:["Dear future me, I am writing this on the last day of my summer workbook.","This summer I finished twenty-one sessions covering all main subjects.","The hardest part was writing long structured answers, but I kept going.","I hope you are using these new skills at school and keeping up the good work."]}
+  }},
+  es:{lc:"es",items:{
+    s4:{t:"Séance 4 — Festival de música",p:["El fin de semana pasado fui a un festival de música con mis amigos.","Escuchamos a varios grupos en directo durante todo el día.","Mi grupo favorito tocó por la noche, y todo el público cantó junto con ellos.","Fue una experiencia inolvidable."]},
+    s5:{t:"Séance 5 — Ir al cine",p:["Ayer fui al cine con mi hermana para ver una película de aventuras.","La sala estaba muy llena porque era un estreno.","Compramos palomitas y nos sentamos cerca de la pantalla.","La película duró casi dos horas y nos gustó mucho."]},
+    s6:{t:"Séance 6 — Tocar la guitarra",p:["Desde hace dos años, toco la guitarra todos los días después de clase.","Al principio era muy difícil, pero ahora puedo tocar varias canciones.","Mi sueño es formar un grupo de música con mis amigos algún día."]},
+    s7:{t:"Séance 7 — Videojuegos",p:["Mis amigos y yo jugamos videojuegos en equipo todos los fines de semana.","Cada uno tiene un papel diferente: yo defiendo la base, otro ataca.","Para ganar es muy importante comunicarse bien y tener estrategia."]},
+    s8:{t:"Séance 8 — Mi actriz favorita",p:["Mi actriz favorita ha trabajado en muchas películas de aventuras y ciencia ficción.","Empezó su carrera muy joven, en una serie de televisión.","Ahora es famosa en todo el mundo y participa en proyectos solidarios.","Espero verla algún día en una alfombra roja."]},
+    s9:{t:"Séance 9 — Tormenta de verano",p:["Ayer por la tarde hubo una tormenta muy fuerte en mi ciudad.","Llovió durante casi una hora y hubo varios truenos.","Tuvimos que cancelar el partido de fútbol que habíamos planeado.","Al final, la tormenta paró y salió un arcoíris precioso."]},
+    s10:{t:"Séance 10 — Isla desierta",p:["Si estuviera perdido en una isla desierta, primero buscaría agua potable.","Después, intentaría hacer una señal en la playa para que los barcos me vieran.","Creo que lo más difícil sería estar solo, sin hablar con nadie."]},
+    s11:{t:"Séance 11 — Balance vacaciones",p:["Este verano ha sido muy especial para mí.","He leído libros, visto películas y aprendido canciones con la guitarra.","También he pasado mucho tiempo con mis amigos.","Estoy un poco triste porque las vacaciones terminan, pero tengo ganas de empezar el curso."]},
+    s12:{t:"Séance 12 — El verano ideal",p:["Para mí, el verano ideal sería pasar dos semanas en la playa o en la montaña.","Me gustaría nadar, hacer senderismo y leer muchos libros.","Iría con mis amigos y mi familia, porque lo más importante es compartir."]},
+    s13:{t:"Séance 13 — Fin de semana",p:["Los sábados me levanto a las diez o más tarde, porque me gusta descansar.","Por la mañana desayuno tranquilamente y veo mi serie favorita.","Por la tarde, quedo con amigos o me quedo en casa jugando a videojuegos.","Me gustan los fines de semana porque puedo hacer lo que quiero sin prisas."]},
+    s14:{t:"Séance 14 — Un libro especial",p:["Quiero hablaros del libro que más me ha impactado.","Lo leí el año pasado: es una novela de aventuras y magia.","Me enseñó que la amistad es más poderosa que cualquier magia.","Decidí prestárselo a mis amigos para que también lo disfrutaran."]},
+    s15:{t:"Séance 15 — El medioambiente",p:["El medioambiente es una de las cosas que más me preocupa.","La contaminación amenaza el futuro del planeta para las generaciones siguientes.","En mi vida diaria intento reciclar, usar la bicicleta y ahorrar agua.","Pido a todos que actúen, porque pequeños gestos pueden marcar una gran diferencia."]},
+    s16:{t:"Séance 16 — Videojuegos",p:["Los videojuegos me enseñaron muchas cosas que no esperaba.","Me gustaban los juegos de rol porque tenía que tomar decisiones importantes.","Cuando perdía, analizaba mis errores y lo intentaba de nuevo.","Los videojuegos pueden enseñar perseverancia y pensamiento estratégico."]},
+    s17:{t:"Séance 17 — Primera Guerra Mundial",p:["La Primera Guerra Mundial comenzó en mil novecientos catorce.","Los soldados vivían en trincheras, con mucho frío y barro.","Millones de personas murieron en este conflicto.","Es importante recordar su sufrimiento para que no se repita jamás."]},
+    s18:{t:"Séance 18 — Comer bien",p:["Desde que aprendí a comer bien, mis resultados en el colegio mejoraron.","El desayuno es la comida más importante del día porque activa el cerebro.","Antes de los exámenes evito los dulces y la comida rápida.","Una buena alimentación me ayuda a rendir mejor y a estar de mejor humor."]},
+    s19:{t:"Séance 19 — Vuelta al cole",p:["Antes de volver al colegio siento algo de miedo, pero también muchas ganas.","He preparado mi mochila y todos mis materiales con antelación.","Mi objetivo es organizarme mejor y pedir ayuda cuando la necesite.","Veo el nuevo curso como una nueva oportunidad para aprender."]},
+    s20:{t:"Séance 20 — Logros del verano",p:["Este verano he aprendido a redactar mejor y a resolver más problemas.","Lo que más me costó fue escribir respuestas completas y organizadas.","Ahora me siento más preparado para la vuelta al colegio.","Mi consejo es trabajar un poco cada día con constancia."]},
+    s21:{t:"Séance 21 — Carta al futuro",p:["Querido yo del futuro, te escribo el último día de mi cuaderno de vacaciones.","Este verano terminé veintiún sesiones de trabajo en todas las materias.","De lo que más orgulloso estoy es de haber terminado el cuaderno completo.","Espero que sigas usando todo lo que aprendiste este verano."]}
+  }}
+};
+
+/* ─── ÉTAT ────────────────────────────────────────────── */
+var lang="fr", sk="", idx=0;
+var allVoices=[], chosenVoice=null, playing=false, utter=null;
+var SS=window.speechSynthesis;
+var progTimer=null;
+
+/* ─── CHARGEMENT DES VOIX ─────────────────────────────── */
+function loadVoices(){
+  allVoices=SS.getVoices();
+  if(!allVoices.length) return;          // pas encore prêt
+  buildVoiceSel();
+}
+
+// Chrome HTTPS : voix disponibles via onvoiceschanged
+if(SS.onvoiceschanged!==undefined) SS.onvoiceschanged=loadVoices;
+// Firefox / Safari / Edge : disponibles immédiatement
+setTimeout(loadVoices, 80);
+setTimeout(loadVoices, 600);
+setTimeout(loadVoices, 1500);
+
+function buildVoiceSel(){
+  var lc=DATA[lang].lc;
+  // priorité : exact (fr-FR) > langue (fr) > tout
+  var pool = allVoices.filter(function(v){return v.lang.toLowerCase().startsWith(lc+"-");});
+  if(!pool.length) pool = allVoices.filter(function(v){return v.lang.toLowerCase().startsWith(lc);});
+
+  var sel=document.getElementById("voice-sel");
+  sel.innerHTML="";
+
+  if(!pool.length){
+    sel.innerHTML='<option value="">— aucune voix —</option>';
+    document.getElementById("help").style.display="block";
+    setSt("st-warn","⚠ Aucune voix pour cette langue. Voir l'aide ci-dessous.");
+    chosenVoice=null; return;
+  }
+
+  document.getElementById("help").style.display="none";
+  pool.forEach(function(v,i){
+    var o=document.createElement("option");
+    o.value=i; o.textContent=v.name+" ("+v.lang+")"; sel.appendChild(o);
+  });
+  sel._pool=pool;
+  chosenVoice=pool[0];
+  setSt("st-ok","✅ "+pool.length+" voix trouvée(s) pour cette langue. Prêt !");
+}
+
+function pickVoice(){
+  var sel=document.getElementById("voice-sel");
+  chosenVoice=(sel._pool||[])[parseInt(sel.value)]||null;
+}
+
+/* ─── NAVIGATION ──────────────────────────────────────── */
+function setLang(l){
+  stop();
+  lang=l;
+  ["fr","en","es"].forEach(function(x){
+    document.getElementById("t-"+x).className="tab "+x+(x===l?" on":"");
+  });
+  buildVoiceSel();
+  buildSeances();
+}
+
+function buildSeances(){
+  var sel=document.getElementById("sel-seance"); sel.innerHTML="";
+  Object.keys(DATA[lang].items).forEach(function(k){
+    var o=document.createElement("option");
+    o.value=k; o.textContent=DATA[lang].items[k].t; sel.appendChild(o);
+  });
+  sk=Object.keys(DATA[lang].items)[0]; idx=0; render();
+}
+
+function setSeance(){ stop(); sk=document.getElementById("sel-seance").value; idx=0; render(); }
+function cur(){ return DATA[lang].items[sk].p; }
+
+function render(){
+  var p=cur();
+  if(idx>=p.length) idx=p.length-1;
+  if(idx<0) idx=0;
+  document.getElementById("counter").textContent="Phrase "+(idx+1)+" / "+p.length;
+  document.getElementById("phrase").textContent="• • • •";
+  document.getElementById("prog").style.width="0%";
+}
+
+function go(d){ stop(); idx+=d; render(); }
+
+/* ─── LECTURE ─────────────────────────────────────────── */
+function togglePlay(){ if(playing) stop(); else doSpeak(); }
+
+function doSpeak(){
+  if(!SS){ setSt("st-err","⚠ Synthèse vocale non disponible sur ce navigateur."); return; }
+  // Recharger les voix si elles n'étaient pas encore là
+  if(!allVoices.length){ allVoices=SS.getVoices(); buildVoiceSel(); }
+  stop();
+
+  utter=new SpeechSynthesisUtterance(cur()[idx]);
+  utter.lang=DATA[lang].lc;
+  utter.rate=parseFloat(document.getElementById("speed").value);
+  if(chosenVoice) utter.voice=chosenVoice;
+
+  utter.onstart=function(){
+    playing=true; setBtnOn();
+    setSt("st-ok","🔊 Lecture en cours…");
+    startProg();
+  };
+  utter.onend=function(){
+    playing=false; setBtnOff();
+    document.getElementById("prog").style.width="100%";
+    setSt("st-ok","✅ Phrase lue — écris-la, puis clique ⏭");
+    clearInterval(progTimer);
+  };
+  utter.onerror=function(e){
+    playing=false; setBtnOff(); clearInterval(progTimer);
+    if(e.error==="not-allowed")
+      setSt("st-err","⚠ Bloqué par le navigateur. Clique d'abord sur la page puis réessaie.");
+    else
+      setSt("st-err","⚠ Erreur : "+e.error+". Essaie une autre voix.");
+  };
+
+  SS.speak(utter);
+}
+
+function stop(){
+  clearInterval(progTimer);
+  if(SS) SS.cancel();
+  if(utter) utter=null;
+  playing=false; setBtnOff();
+  document.getElementById("prog").style.width="0%";
+}
+
+var progStart=0, progDuration=3000;
+function startProg(){
+  progStart=Date.now();
+  // durée estimée selon vitesse et longueur du texte (~12 mots/sec à vitesse 1)
+  var words=cur()[idx].split(" ").length;
+  var rate=parseFloat(document.getElementById("speed").value);
+  progDuration=Math.max(1500,(words/12)*1000/rate*1000);
+  clearInterval(progTimer);
+  progTimer=setInterval(function(){
+    var pct=Math.min(((Date.now()-progStart)/progDuration)*100,99);
+    document.getElementById("prog").style.width=pct+"%";
+  },80);
+}
+
+function setBtnOn(){ var b=document.getElementById("play-btn"); b.textContent="⏹ Arrêter"; b.classList.add("on"); }
+function setBtnOff(){ var b=document.getElementById("play-btn"); b.textContent="▶ Écouter"; b.classList.remove("on"); }
+function setSt(c,m){ var e=document.getElementById("status"); e.className="status "+c; e.textContent=m; }
+
+/* Init */
+buildSeances();
+</script>
+</body>
+</html>

@@ -1,0 +1,450 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Mes XP — Nathan</title>
+<style>
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body { font-family: Arial, sans-serif; background: #0F0F23; color: #E2E8F0; min-height: 100vh; }
+.header { background: linear-gradient(135deg,#1971C2 0%,#7048E8 100%); padding: 18px 20px; text-align: center; }
+.header h1 { font-size: 20px; font-weight: bold; color: white; }
+.header p  { font-size: 12px; color: rgba(255,255,255,.75); margin-top: 3px; }
+.wrap { max-width: 480px; margin: 0 auto; padding: 16px 14px; }
+
+.level-card { background: #1A1A2E; border: 1px solid #2D2D4E; border-radius: 14px;
+              padding: 18px; margin-bottom: 14px; text-align: center; }
+.level-badge { width: 60px; height: 60px; border-radius: 50%; margin: 0 auto 10px;
+               display: flex; align-items: center; justify-content: center;
+               font-size: 24px; font-weight: bold; border: 3px solid; }
+.level-name { font-size: 17px; font-weight: bold; margin-bottom: 3px; }
+.level-xp   { font-size: 13px; color: #94A3B8; }
+.bar-wrap { background: #0F0F23; border-radius: 10px; height: 14px; margin: 11px 0 5px; overflow: hidden; }
+.bar-fill { height: 100%; border-radius: 10px; transition: width .5s cubic-bezier(.34,1.56,.64,1); }
+.bar-label { display: flex; justify-content: space-between; font-size: 11px; color: #64748B; }
+
+/* Prochaine récompense */
+.reward-hint { background: #1E1B3A; border: 1px solid #4D3F80; border-radius: 10px;
+               padding: 10px 14px; margin-bottom: 14px; font-size: 13px; color: #C4B5FD; }
+.reward-hint span { color: #A78BFA; font-weight: bold; }
+
+.stats { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 14px; }
+.stat-box { background: #1A1A2E; border: 1px solid #2D2D4E; border-radius: 10px;
+            padding: 11px; text-align: center; }
+.stat-num { font-size: 26px; font-weight: bold; }
+.stat-lbl { font-size: 11px; color: #64748B; margin-top: 2px; }
+
+.section-title { font-size: 11px; font-weight: bold; text-transform: uppercase;
+                 letter-spacing: .06em; color: #64748B; margin: 14px 0 8px; }
+.act-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 14px; }
+.act-btn { background: #1A1A2E; border: 1px solid #2D2D4E; border-radius: 10px;
+           padding: 11px 10px; cursor: pointer; text-align: left; transition: .15s;
+           color: #E2E8F0; font-family: Arial, sans-serif; }
+.act-btn:hover  { transform: translateY(-2px); }
+.act-btn:active { transform: scale(.97); }
+.act-icon { font-size: 20px; margin-bottom: 4px; }
+.act-name { font-size: 13px; font-weight: bold; display: block; }
+.act-xp   { font-size: 12px; color: #94A3B8; }
+
+/* ─── Liste des 21 séances à cocher ─── */
+.seance-head { display: flex; justify-content: space-between; align-items: center; margin: 14px 0 2px; }
+.seance-head .section-title { margin: 0; }
+.seance-count { font-size: 13px; font-weight: bold; color: #2F9E44; }
+.seance-sub { font-size: 11px; color: #64748B; margin-bottom: 9px; }
+.seance-list { display: flex; flex-direction: column; gap: 6px; margin-bottom: 14px; }
+.seance-row { display: flex; align-items: center; gap: 11px; background: #1A1A2E;
+              border: 1px solid #2D2D4E; border-radius: 10px; padding: 10px 12px;
+              cursor: pointer; transition: .15s; color: #E2E8F0; }
+.seance-row:hover  { border-color: #4D4D8E; }
+.seance-row:active { transform: scale(.99); }
+.seance-check { width: 22px; height: 22px; border-radius: 6px; border: 2px solid #3A3A5E;
+                flex-shrink: 0; display: flex; align-items: center; justify-content: center;
+                font-size: 14px; font-weight: bold; color: transparent; }
+.seance-label { flex: 1; font-size: 13px; font-weight: bold; }
+.seance-xp { font-size: 11px; color: #64748B; white-space: nowrap; }
+.seance-next { font-size: 10px; font-weight: bold; color: #FFD43B; background: #3A2E00;
+               border-radius: 6px; padding: 2px 7px; margin-left: 6px; }
+.seance-row.done { border-color: #2F9E44; background: #132A1C; }
+.seance-row.done .seance-check { background: #2F9E44; border-color: #2F9E44; color: white; }
+.seance-row.done .seance-label { color: #86EFAC; }
+.seance-row.done .seance-xp { color: #2F9E44; }
+/* Séance en cours (celle à valider) */
+.seance-row.current { border-color: #FFD43B; background: #221D08; }
+.seance-row.current .seance-check { border-color: #FFD43B; }
+.seance-row.current:hover { border-color: #FFE066; }
+/* Séances déjà validées : verrouillées (non cliquables) */
+.seance-row.locked { cursor: default; }
+.seance-row.locked:hover  { border-color: #2F9E44; }
+.seance-row.locked:active { transform: none; }
+.undo-btn { background: none; border: 1px solid #2D2D4E; border-radius: 8px;
+            padding: 6px 12px; color: #64748B; font-size: 12px; cursor: pointer;
+            font-family: Arial, sans-serif; }
+.undo-btn:hover { border-color: #94A3B8; color: #94A3B8; }
+
+.badges-wrap { background: #1A1A2E; border: 1px solid #2D2D4E; border-radius: 12px;
+               padding: 12px 14px; margin-bottom: 14px; }
+.badges-list { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 8px; }
+.badge { background: #2D2D4E; border-radius: 20px; padding: 4px 11px;
+         font-size: 12px; font-weight: bold; color: #94A3B8; }
+.badge.earned { background: linear-gradient(135deg,#F08C00,#E8590C); color: white; }
+
+.hist-wrap { background: #1A1A2E; border: 1px solid #2D2D4E; border-radius: 12px;
+             padding: 12px 14px; margin-bottom: 14px; }
+.hist-item { display: flex; justify-content: space-between; font-size: 13px;
+             padding: 5px 0; border-bottom: 1px solid #2D2D4E; color: #CBD5E1; }
+.hist-item:last-child { border-bottom: none; }
+.hist-xp { color: #FFD43B; font-weight: bold; }
+
+.sync-dot { width: 7px; height: 7px; border-radius: 50%; display: inline-block; margin-right: 5px; }
+.sync-ok  { background: #2F9E44; }
+.sync-no  { background: #64748B; }
+.sync-txt { font-size: 11px; color: #64748B; margin-bottom: 12px; }
+
+.reset-btn { background: none; border: 1px solid #2D2D4E; border-radius: 8px;
+             padding: 7px 14px; color: #64748B; font-size: 12px; cursor: pointer;
+             font-family: Arial, sans-serif; width: 100%; margin-top: 4px; }
+.reset-btn:hover { border-color: #E03131; color: #E03131; }
+
+.popup { position: fixed; top: 50%; left: 50%; transform: translate(-50%,-50%) scale(0);
+         background: linear-gradient(135deg,#1971C2,#7048E8); border-radius: 16px;
+         padding: 22px 32px; text-align: center; z-index: 999;
+         transition: transform .3s cubic-bezier(.34,1.56,.64,1); pointer-events: none; }
+.popup.show { transform: translate(-50%,-50%) scale(1); }
+.popup-xp  { font-size: 40px; font-weight: bold; color: #FFD43B; }
+.popup-txt { font-size: 14px; color: white; margin-top: 4px; }
+</style>
+</head>
+<body>
+<div class="header">
+  <h1>⚡ Mes Points XP</h1>
+  <p>Clique sur chaque activité terminée pour gagner tes points !</p>
+</div>
+<div style="background:#1A1A2E;padding:8px 14px;text-align:right;">
+  <a href="Recompenses_Nathan.html" style="color:#FFD43B;font-size:13px;font-weight:bold;text-decoration:none;">
+    🏆 Mes récompenses →
+  </a>
+</div>
+<div style="background:#1A1A2E;padding:8px 16px;text-align:right;border-bottom:1px solid #2D2D4E;">
+  <a href="index.html" style="color:#FFD43B;font-size:13px;font-weight:bold;text-decoration:none;">← Accueil</a>
+</div>
+<div class="wrap">
+
+  <div class="sync-txt">
+    <span class="sync-dot" id="sync-dot"></span>
+    <span id="sync-txt">Vérification de la synchronisation…</span>
+  </div>
+
+  <div class="level-card">
+    <div class="level-badge" id="badge"></div>
+    <div class="level-name"  id="lvl-name">Niveau 1 — Recrue</div>
+    <div class="level-xp"    id="lvl-xp">0 XP au total</div>
+    <div class="bar-wrap">
+      <div class="bar-fill" id="bar" style="width:0%"></div>
+    </div>
+    <div class="bar-label">
+      <span id="bar-cur">0 XP</span>
+      <span id="bar-next">100 XP</span>
+    </div>
+  </div>
+
+  <div class="reward-hint" id="reward-hint" style="display:none">
+    🎁 Prochaine récompense : <span id="reward-txt"></span>
+  </div>
+
+  <div class="stats">
+    <div class="stat-box">
+      <div class="stat-num" id="stat-seances" style="color:#2F9E44">0</div>
+      <div class="stat-lbl">Séances validées</div>
+    </div>
+    <div class="stat-box">
+      <div class="stat-num" id="stat-badges" style="color:#FFD43B">0</div>
+      <div class="stat-lbl">Badges gagnés</div>
+    </div>
+  </div>
+
+  <div class="section-title">💥 Activités — clique quand tu as fini et corrigé</div>
+  <div class="act-grid" id="act-grid"></div>
+
+  <div class="seance-head">
+    <div class="section-title">📘 Progression des 21 séances</div>
+    <div class="seance-count" id="seance-count">0 / 21</div>
+  </div>
+  <div class="seance-sub">Une seule séance s'affiche à la fois. Valide-la : elle disparaît et la suivante prend sa place — +10 XP à chaque fois 🎉</div>
+  <div class="seance-list" id="seance-list"></div>
+  <div id="undo-wrap" style="display:none;text-align:right;margin:-6px 0 14px">
+    <button class="undo-btn" onclick="undoLastSeance()">↩︎ Annuler la dernière séance</button>
+  </div>
+  <div id="seance-done-msg" style="display:none;background:#132A1C;border:1px solid #2F9E44;border-radius:10px;padding:12px 14px;margin-bottom:14px;font-size:14px;font-weight:bold;color:#86EFAC;text-align:center">🏆 Bravo Nathan ! Les 21 séances sont terminées 🎉</div>
+
+  <div class="badges-wrap">
+    <div class="section-title" style="margin:0 0 0">🏆 Mes badges</div>
+    <div class="badges-list" id="badges-list"></div>
+  </div>
+
+  <div class="hist-wrap">
+    <div class="section-title" style="margin:0 0 0">📜 Activité récente</div>
+    <div id="hist-list" style="margin-top:8px"></div>
+  </div>
+
+  <button class="reset-btn" onclick="resetXP()">🗑 Remettre à zéro</button>
+
+  <div style="text-align:center;font-size:11px;color:#475569;margin-top:14px;">
+    ✅ Version « une séance à la fois » — la séance validée disparaît et la suivante prend sa place.
+  </div>
+</div>
+
+<div class="popup" id="popup">
+  <div class="popup-xp"  id="popup-xp">+10 XP</div>
+  <div class="popup-txt" id="popup-txt">Dictée</div>
+</div>
+
+<script>
+/* ---- clés partagées ---- */
+var KEY_XP      = "nathan_xp";
+var KEY_REWARDS = "nathan_rewards";
+
+var ACTIVITES = [
+  {key:"logique",   label:"Suites logiques", xp:5,  icon:"🧩", color:"#A61E4D"},
+  {key:"dictee",    label:"Dictée",           xp:10, icon:"✏️", color:"#E8590C"},
+  {key:"redaction", label:"Rédaction",        xp:15, icon:"📝", color:"#D6336C"},
+  {key:"maths",     label:"Maths",            xp:15, icon:"➕", color:"#1971C2"},
+  {key:"anglais",   label:"Anglais",          xp:10, icon:"🇬🇧", color:"#7048E8"},
+  {key:"espagnol",  label:"Espagnol",         xp:10, icon:"🇪🇸", color:"#2F9E44"},
+];
+
+/* Les 21 séances (mêmes titres que le lecteur audio) */
+var SEANCES = [
+  {key:"s1",  label:"Séance 1 — Jeux vidéo"},
+  {key:"s2",  label:"Séance 2 — Cinéma"},
+  {key:"s3",  label:"Séance 3 — Musique"},
+  {key:"s4",  label:"Séance 4 — E-sport"},
+  {key:"s5",  label:"Séance 5 — Séries"},
+  {key:"s6",  label:"Séance 6 — Concert"},
+  {key:"s7",  label:"Séance 7 — Speedrun"},
+  {key:"s8",  label:"Séance 8 — Tournage"},
+  {key:"s9",  label:"Séance 9 — Festival"},
+  {key:"s10", label:"Séance 10 — Compétition"},
+  {key:"s11", label:"Séance 11 — Avant-première"},
+  {key:"s12", label:"Séance 12 — OST"},
+  {key:"s13", label:"Séance 13 — Doublage"},
+  {key:"s14", label:"Séance 14 — Quête"},
+  {key:"s15", label:"Séance 15 — Animation"},
+  {key:"s16", label:"Séance 16 — BD manga"},
+  {key:"s17", label:"Séance 17 — Réseaux"},
+  {key:"s18", label:"Séance 18 — IA"},
+  {key:"s19", label:"Séance 19 — Superhéros"},
+  {key:"s20", label:"Séance 20 — Rentrée"},
+  {key:"s21", label:"Séance 21 — Bilan"},
+];
+
+var NIVEAUX = [
+  {num:1, name:"Recrue",     color:"#64748B", bg:"#2D2D4E"},
+  {num:2, name:"Apprenti",   color:"#2F9E44", bg:"#1B4D2A"},
+  {num:3, name:"Aventurier", color:"#1971C2", bg:"#0D3A6B"},
+  {num:4, name:"Stratège",   color:"#7048E8", bg:"#3C2080"},
+  {num:5, name:"Expert",     color:"#F08C00", bg:"#5C3600"},
+  {num:6, name:"Maître",     color:"#E03131", bg:"#5C1010"},
+  {num:7, name:"Champion",   color:"#D6336C", bg:"#60163A"},
+  {num:8, name:"Légende",    color:"#FFD43B", bg:"#5C4400"},
+];
+var BADGES = [
+  {seances:1,  label:"⭐ Première séance !"},
+  {seances:3,  label:"📘 Tome 1 terminé"},
+  {seances:7,  label:"🔥 Une semaine de quêtes"},
+  {seances:11, label:"🚀 Mi-parcours"},
+  {seances:21, label:"🏆 Été complet !"},
+];
+/* IDs correspondant aux paliers dans Recompenses_Nathan.html */
+var REWARD_PALIERS = ["xp0","xp1","xp2","xp3","xp4","xp5","xp6"];
+
+var XP_PER = 100;
+var state  = {xp:0, seances:0, history:[], done:{}};
+
+function lvlInfo(xp){
+  var i=Math.min(Math.floor(xp/XP_PER),NIVEAUX.length-1);
+  return {lvl:NIVEAUX[i], inLvl:Math.min(xp-i*XP_PER, XP_PER), idx:i};
+}
+function earned(){ return BADGES.filter(function(b){return state.seances>=b.seances;}); }
+
+/* Nombre de séances cochées */
+function countDone(){ var n=0; for(var k in state.done){ if(state.done[k]) n++; } return n; }
+function seanceLabel(key){
+  for(var i=0;i<SEANCES.length;i++){ if(SEANCES[i].key===key) return SEANCES[i].label; }
+  return key;
+}
+
+function loadRewardHint(){
+  var info=lvlInfo(state.xp);
+  var nextIdx=info.idx+1;
+  if(nextIdx>=NIVEAUX.length){
+    document.getElementById("reward-hint").style.display="none"; return;
+  }
+  try{
+    var r=localStorage.getItem(KEY_REWARDS);
+    if(!r){document.getElementById("reward-hint").style.display="none"; return;}
+    var data=JSON.parse(r);
+    var palierKey=REWARD_PALIERS[nextIdx-1];
+    var reward=data[palierKey]||"";
+    if(reward){
+      document.getElementById("reward-txt").textContent=reward+" (niveau "+(nextIdx+1)+")";
+      document.getElementById("reward-hint").style.display="block";
+    } else {
+      document.getElementById("reward-hint").style.display="none";
+    }
+  }catch(e){document.getElementById("reward-hint").style.display="none";}
+}
+
+/* On affiche UNE SEULE séance à la fois : la séance en cours.
+   Dès qu'elle est validée, elle disparaît et la suivante prend sa place. */
+function renderSeanceList(){
+  var list=document.getElementById("seance-list");
+  list.innerHTML="";
+  /* index de la première séance non validée = séance en cours */
+  var currentIdx=SEANCES.length;
+  for(var i=0;i<SEANCES.length;i++){ if(!state.done[SEANCES[i].key]){ currentIdx=i; break; } }
+  var allDone=(currentIdx>=SEANCES.length);
+  if(!allDone){
+    var s=SEANCES[currentIdx];
+    var row=document.createElement("div");
+    row.className="seance-row current";
+    row.innerHTML='<div class="seance-check">✓</div>'+
+      '<div class="seance-label">'+s.label+' <span class="seance-next">à valider</span></div>'+
+      '<div class="seance-xp">+10 XP</div>';
+    row.addEventListener("click",(function(key){return function(){validateSeance(key);};})(s.key));
+    list.appendChild(row);
+  }
+  document.getElementById("seance-count").textContent=countDone()+" / "+SEANCES.length;
+  document.getElementById("undo-wrap").style.display=(countDone()>0)?"block":"none";
+  var msg=document.getElementById("seance-done-msg");
+  if(msg) msg.style.display=allDone?"block":"none";
+}
+
+function render(){
+  var info=lvlInfo(state.xp);
+  var lvl=info.lvl;
+  var b=document.getElementById("badge");
+  b.textContent=lvl.num; b.style.color=lvl.color; b.style.borderColor=lvl.color; b.style.background=lvl.bg;
+  document.getElementById("lvl-name").textContent="Niveau "+lvl.num+" — "+lvl.name;
+  document.getElementById("lvl-name").style.color=lvl.color;
+  document.getElementById("lvl-xp").textContent=state.xp+" XP au total";
+  var pct=(info.inLvl/XP_PER)*100;
+  var bar=document.getElementById("bar");
+  bar.style.width=pct+"%"; bar.style.background="linear-gradient(90deg,"+lvl.color+",#FFD43B)";
+  document.getElementById("bar-cur").textContent=info.inLvl+" XP";
+  document.getElementById("bar-next").textContent=XP_PER+" XP";
+  document.getElementById("stat-seances").textContent=state.seances;
+  var eb=earned();
+  document.getElementById("stat-badges").textContent=eb.length;
+  var bl=document.getElementById("badges-list");
+  bl.innerHTML="";
+  if(!eb.length){bl.innerHTML='<span style="font-size:12px;color:#64748B">Aucun badge encore — continue !</span>';}
+  else{eb.forEach(function(b){var s=document.createElement("span");s.className="badge earned";s.textContent=b.label;bl.appendChild(s);});}
+  var hl=document.getElementById("hist-list");
+  hl.innerHTML="";
+  if(!state.history.length){hl.innerHTML='<div style="font-size:13px;color:#64748B">Rien encore !</div>';}
+  else{state.history.slice(0,8).forEach(function(h){var d=document.createElement("div");d.className="hist-item";d.innerHTML='<span>'+h.label+' <span style="color:#64748B;font-size:11px">'+h.date+'</span></span><span class="hist-xp">+'+h.xp+' XP</span>';hl.appendChild(d);});}
+  renderSeanceList();
+  loadRewardHint();
+  updateSync();
+}
+
+function updateSync(){
+  var dot=document.getElementById("sync-dot");
+  var txt=document.getElementById("sync-txt");
+  if(localStorage.getItem(KEY_XP)){
+    dot.className="sync-dot sync-ok"; txt.textContent="Synchronisé avec le tableau des récompenses ✓";
+  } else {
+    dot.className="sync-dot sync-no"; txt.textContent="Pas encore sauvegardé";
+  }
+}
+
+function save(){
+  try{localStorage.setItem(KEY_XP,JSON.stringify(state));}catch(e){}
+}
+function load(){
+  try{var s=localStorage.getItem(KEY_XP);if(s)state=JSON.parse(s);}catch(e){}
+  /* Compatibilité avec l'ancienne version (sans liste de séances) :
+     si des séances étaient déjà validées, on coche les premières pour refléter la progression,
+     sans retoucher les XP déjà gagnés. */
+  if(!state.done){
+    state.done={};
+    var n=state.seances||0;
+    for(var i=0;i<n && i<SEANCES.length;i++){ state.done[SEANCES[i].key]=true; }
+  }
+  if(!state.history) state.history=[];
+  state.seances=countDone();
+}
+
+function showPopup(xpText,txt){
+  var p=document.getElementById("popup");
+  document.getElementById("popup-xp").textContent=xpText;
+  document.getElementById("popup-txt").textContent=txt;
+  p.classList.add("show"); setTimeout(function(){p.classList.remove("show");},1400);
+}
+
+function addXP(label,xp){
+  state.xp+=xp;
+  var now=new Date();
+  state.history.unshift({label:label,xp:xp,date:now.toLocaleDateString("fr-FR",{day:"2-digit",month:"2-digit"})});
+  state.history=state.history.slice(0,20);
+  save(); render();
+  showPopup("+"+xp+" XP",label);
+}
+
+/* Valider la séance en cours (débloque la suivante) */
+function validateSeance(key){
+  if(state.done[key]) return;
+  state.done[key]=true;
+  state.xp+=10;
+  var now=new Date();
+  state.history.unshift({label:seanceLabel(key)+" ✅",xp:10,
+    date:now.toLocaleDateString("fr-FR",{day:"2-digit",month:"2-digit"})});
+  state.history=state.history.slice(0,20);
+  state.seances=countDone();
+  save(); render();
+  showPopup("+10 XP",seanceLabel(key)+" terminée !");
+}
+
+/* Annuler la dernière séance validée (en cas d'erreur) */
+function undoLastSeance(){
+  var lastIdx=-1;
+  for(var i=0;i<SEANCES.length;i++){ if(state.done[SEANCES[i].key]) lastIdx=i; }
+  if(lastIdx<0) return;
+  var key=SEANCES[lastIdx].key;
+  state.done[key]=false;
+  state.xp=Math.max(0,state.xp-10);
+  state.seances=countDone();
+  save(); render();
+}
+
+function resetXP(){
+  if(!confirm("Remettre à zéro ? Cette action est définitive."))return;
+  state={xp:0,seances:0,history:[],done:{}};save();render();
+}
+
+/* Sync en temps réel si les deux onglets sont ouverts */
+window.addEventListener("storage",function(e){
+  if(e.key===KEY_XP){
+    try{if(e.newValue){state=JSON.parse(e.newValue); if(!state.done)state.done={}; state.seances=countDone();}}catch(x){}
+    render();
+  }
+  if(e.key===KEY_REWARDS){loadRewardHint();}
+});
+
+/* Construire les boutons d'activités */
+var grid=document.getElementById("act-grid");
+ACTIVITES.forEach(function(a){
+  var btn=document.createElement("button");
+  btn.className="act-btn";
+  btn.innerHTML='<div class="act-icon">'+a.icon+'</div><span class="act-name">'+a.label+'</span><span class="act-xp">+'+a.xp+' XP</span>';
+  btn.style.borderColor=a.color+"55";
+  btn.addEventListener("mouseover",function(){btn.style.borderColor=a.color;});
+  btn.addEventListener("mouseout", function(){btn.style.borderColor=a.color+"55";});
+  btn.addEventListener("click",function(){addXP(a.label,a.xp);});
+  grid.appendChild(btn);
+});
+
+load(); render();
+</script>
+</body>
+</html>

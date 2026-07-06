@@ -1,0 +1,508 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Mes récompenses — Nathan</title>
+<style>
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body { font-family: Arial, sans-serif; background: #F8F9FA; color: #212529; }
+.header { background: linear-gradient(135deg,#E8590C 0%,#F08C00 100%); color: white;
+          padding: 16px 20px; }
+.header h1 { font-size: 19px; font-weight: bold; }
+.header p  { font-size: 12px; opacity: .85; margin-top: 3px; }
+.wrap { max-width: 680px; margin: 0 auto; padding: 18px 14px; }
+
+.xp-live { background: #1A1A2E; border-radius: 12px; padding: 14px 16px;
+            margin-bottom: 18px; display: flex; align-items: center; gap: 16px; flex-wrap: wrap; }
+.xp-badge { width: 48px; height: 48px; border-radius: 50%; display: flex; align-items: center;
+             justify-content: center; font-size: 20px; font-weight: bold; border: 2.5px solid; flex-shrink: 0; }
+.xp-info  { flex: 1; }
+.xp-name  { font-size: 15px; font-weight: bold; color: #E2E8F0; }
+.xp-total { font-size: 12px; color: #94A3B8; margin-top: 2px; }
+.xp-bar-wrap { background: #0F0F23; border-radius: 8px; height: 10px; margin-top: 6px; overflow: hidden; }
+.xp-bar-fill { height: 100%; border-radius: 8px; transition: width .6s; }
+
+.sync-dot { width: 7px; height: 7px; border-radius: 50%; display: inline-block; margin-right: 5px; vertical-align: 1px; }
+.sync-ok  { background: #2F9E44; }
+.sync-no  { background: #ADB5BD; }
+.sync-txt { font-size: 11px; color: #868E96; margin-bottom: 14px; }
+
+/* ─── Espace maman (verrou) ─── */
+.mom-bar { margin-bottom: 16px; }
+.mom-open-btn { background: #212529; color: white; border: none; border-radius: 9px;
+                padding: 10px 16px; font-size: 14px; font-weight: bold; cursor: pointer;
+                font-family: Arial, sans-serif; }
+.mom-open-btn:hover { background: #343A40; }
+.mom-hint { font-size: 11px; color: #ADB5BD; margin-top: 6px; }
+.mom-on { background: #E7F5FF; border: 1.5px solid #4DABF7; border-radius: 9px; padding: 11px 14px;
+          font-size: 13px; font-weight: bold; color: #1971C2; display: flex; align-items: center;
+          justify-content: space-between; gap: 10px; flex-wrap: wrap; }
+.mom-lock-btn { background: #1971C2; color: white; border: none; border-radius: 7px;
+                padding: 7px 13px; font-size: 12px; font-weight: bold; cursor: pointer;
+                font-family: Arial, sans-serif; }
+.mom-lock-btn:hover { background: #1864AB; }
+
+/* ─── Encadré « Récompenses à réclamer » ─── */
+.areclamer { background: linear-gradient(135deg,#FFF4E6,#FFE8CC); border: 2px solid #FFA94D;
+             border-radius: 12px; padding: 14px 16px; margin-bottom: 18px; }
+.areclamer-head { font-size: 15px; font-weight: bold; color: #D9480F; margin-bottom: 4px; }
+.areclamer-sub  { font-size: 11px; color: #B35309; margin-bottom: 11px; }
+.areclamer-item { display: flex; align-items: center; justify-content: space-between; gap: 12px;
+                  background: white; border-radius: 9px; padding: 10px 12px; margin-bottom: 8px;
+                  box-shadow: 0 1px 3px rgba(217,72,15,.12); }
+.areclamer-item:last-child { margin-bottom: 0; }
+.ar-info { flex: 1; min-width: 0; }
+.ar-txt  { font-size: 14px; font-weight: bold; color: #212529; }
+.ar-sub  { font-size: 11px; color: #868E96; margin-top: 2px; }
+.ar-btn  { background: #2F9E44; color: white; border: none; border-radius: 8px; padding: 9px 15px;
+           font-size: 13px; font-weight: bold; cursor: pointer; white-space: nowrap; font-family: Arial, sans-serif; }
+.ar-btn:hover { background: #2B8A3E; }
+.ar-lock { font-size: 11px; color: #B35309; font-weight: bold; white-space: nowrap; }
+
+.btn-row { display: flex; gap: 10px; margin-bottom: 10px; flex-wrap: wrap; }
+.btn { padding: 9px 18px; border: 1.5px solid #CED4DA; border-radius: 8px; background: white;
+       cursor: pointer; font-size: 14px; font-weight: bold; color: #212529; transition: .15s; }
+.btn:hover { background: #F1F3F5; }
+.btn.primary { background: #E8590C; color: white; border-color: #E8590C; }
+.btn.primary:hover { background: #D04A0A; }
+.btn.danger { color: #C92A2A; }
+.status { font-size: 13px; color: #2B8A3E; min-height: 16px; margin-bottom: 10px; }
+
+.section-title { font-size: 11px; font-weight: bold; text-transform: uppercase;
+                 letter-spacing: .05em; color: #868E96; margin: 18px 0 8px; }
+.table { border: 1.5px solid #DEE2E6; border-radius: 10px; overflow: hidden; margin-bottom: 6px; }
+.thead { display: grid; background: #F1F3F5; border-bottom: 1.5px solid #DEE2E6; }
+.thead.col3 { grid-template-columns: 1fr 1fr 58px; }
+.th { padding: 7px 13px; font-size: 11px; color: #868E96; font-weight: bold; }
+.th:not(:last-child) { border-right: 1px solid #DEE2E6; }
+.row { display: grid; border-bottom: 1px solid #F1F3F5; }
+.row:last-child { border-bottom: none; }
+.row:hover { background: #FAFAFA; }
+.row.col3 { grid-template-columns: 1fr 1fr 58px; }
+.cell { padding: 9px 13px; font-size: 13px; }
+.cell:not(:last-child) { border-right: 1px solid #F1F3F5; }
+.cell.state { display: flex; align-items: center; justify-content: center; }
+.palier { font-weight: bold; color: #212529; display: flex; align-items: center; gap: 6px; }
+.detail { font-size: 11px; color: #ADB5BD; margin-top: 1px; }
+.dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
+.inp { width: 100%; border: none; background: transparent; font-size: 13px; color: #212529;
+       outline: none; font-family: Arial, sans-serif; padding: 2px 0; }
+.inp:focus { outline: none; }
+.inp::placeholder { color: #CED4DA; }
+.inp[readonly] { color: #495057; }
+.inp.claimed { text-decoration: line-through; opacity: .55; }
+
+.s-ico { font-size: 18px; background: none; border: none; padding: 2px 4px; line-height: 1;
+         cursor: pointer; font-family: Arial, sans-serif; }
+.s-locked { opacity: .3; cursor: default; }
+.s-claim  { animation: gift-pulse 1.5s ease-in-out infinite; }
+span.s-ico { cursor: default; }
+@keyframes gift-pulse { 0%,100% { transform: scale(1); } 50% { transform: scale(1.22); } }
+
+.conseil { background: #FFF9DB; border: 1.5px solid #FFD43B; border-radius: 10px;
+           padding: 13px 15px; font-size: 13px; color: #664D03; line-height: 1.6; margin-top: 16px; }
+.conseil strong { font-weight: bold; }
+.legend { font-size: 11px; color: #868E96; margin: 6px 2px 0; }
+
+@media print {
+  body { background: white; }
+  .btn-row,.status,.no-print,.xp-live,.sync-txt,.areclamer,.mom-bar { display: none !important; }
+  .inp { border-bottom: 1px solid #CED4DA !important; }
+}
+</style>
+</head>
+<body>
+<div class="header">
+  <h1>🏆 Mes récompenses</h1>
+  <p>Voici tes récompenses — elles se débloquent automatiquement avec tes points !</p>
+</div>
+<div style="background:#F1F3F5;padding:8px 14px;border-bottom:1px solid #DEE2E6;text-align:right;">
+  <a href="XP_Nathan.html" style="color:#1971C2;font-size:13px;font-weight:bold;text-decoration:none;">
+    ⚡ Mes points XP →
+  </a>
+</div>
+<div style="background:#F1F3F5;padding:8px 16px;text-align:right;border-bottom:1px solid #DEE2E6;">
+  <a href="index.html" style="color:#E8590C;font-size:13px;font-weight:bold;text-decoration:none;">← Accueil</a>
+</div>
+<div class="wrap">
+
+  <div class="xp-live" id="xp-live">
+    <div class="xp-badge" id="xp-badge">1</div>
+    <div class="xp-info">
+      <div class="xp-name"  id="xp-name">Niveau 1 — Recrue</div>
+      <div class="xp-total" id="xp-total">0 XP — charge le fichier XP pour voir la progression</div>
+      <div class="xp-bar-wrap">
+        <div class="xp-bar-fill" id="xp-bar" style="width:0%;background:#64748B"></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="sync-txt">
+    <span class="sync-dot" id="sync-dot"></span>
+    <span id="sync-txt">Vérification…</span>
+  </div>
+
+  <!-- Espace maman -->
+  <div class="mom-bar" id="mom-bar"></div>
+
+  <!-- Récompenses débloquées à réclamer -->
+  <div class="areclamer" id="areclamer" style="display:none">
+    <div class="areclamer-head">🎁 Récompenses à réclamer</div>
+    <div class="areclamer-sub" id="areclamer-sub">Paliers atteints ! Clique sur « Reçue » quand la récompense a été donnée.</div>
+    <div id="areclamer-list"></div>
+  </div>
+
+  <div class="btn-row no-print">
+    <button class="btn primary mom-only" onclick="sauvegarder()" style="display:none">💾 Sauvegarder</button>
+    <button class="btn" onclick="window.print()">🖨 Imprimer / PDF</button>
+    <button class="btn danger mom-only" onclick="effacer()" style="display:none">🗑 Effacer</button>
+  </div>
+  <div class="status" id="st"></div>
+
+  <!-- XP paliers -->
+  <div class="section-title">🎮 Paliers de points XP</div>
+  <div class="table">
+    <div class="thead col3">
+      <div class="th">Niveau</div>
+      <div class="th">Récompense</div>
+      <div class="th" style="text-align:center">Reçue</div>
+    </div>
+    <div id="xp-rows"></div>
+  </div>
+
+  <!-- Séances -->
+  <div class="section-title">📘 Séances terminées</div>
+  <div class="table">
+    <div class="thead col3">
+      <div class="th">Objectif</div>
+      <div class="th">Récompense</div>
+      <div class="th" style="text-align:center">Reçue</div>
+    </div>
+    <div id="sea-rows"></div>
+  </div>
+
+  <!-- Lecture -->
+  <div class="section-title">📚 Livres lus</div>
+  <div class="table">
+    <div class="thead col3">
+      <div class="th">Livre / quiz</div>
+      <div class="th">Récompense</div>
+      <div class="th" style="text-align:center">Reçue</div>
+    </div>
+    <div id="lec-rows"></div>
+  </div>
+  <div class="legend">🔒 pas encore atteint · 🎁 débloqué · ○ à donner · ✅ reçue</div>
+
+  <div class="conseil">
+    <strong>💡 Idées :</strong>
+    Heure de jeu en plus · Film au cinéma · Jeu à télécharger · Pizza de ton choix ·
+    Sortie avec des amis · Accessoire gaming · Nuit chez un ami · Série de ton choix ·
+    Escape game · Concert
+  </div>
+</div>
+
+<script>
+/* ================================================================
+   CODE DE L'ESPACE MAMAN
+   Pour changer le code, remplacez les 4 chiffres ci-dessous.
+   ================================================================ */
+var CODE_MAMAN = "1234";
+
+var KEY_XP      = "nathan_xp";
+var KEY_REWARDS = "nathan_rewards";
+var KEY_CLAIMED = "nathan_claimed";
+var STORE_TIMER = null;
+var momMode = false;   /* espace maman déverrouillé ? */
+
+var XP_DATA = [
+  {id:"xp0", palier:"Niveau 2 — 100 XP",      detail:"1-2 séances",  color:"#1971C2", threshold:100},
+  {id:"xp1", palier:"Niveau 3 — 200 XP",      detail:"",             color:"#2F9E44", threshold:200},
+  {id:"xp2", palier:"Niveau 4 — 300 XP",      detail:"",             color:"#F08C00", threshold:300},
+  {id:"xp3", palier:"Niveau 5 — 400 XP",      detail:"",             color:"#E03131", threshold:400},
+  {id:"xp4", palier:"Niveau 6 — 500 XP",      detail:"",             color:"#7048E8", threshold:500},
+  {id:"xp5", palier:"Niveau 7 — 600 XP",      detail:"",             color:"#D6336C", threshold:600},
+  {id:"xp6", palier:"Niveau Légende — 700 XP",detail:"maximum !",    color:"#E8590C", threshold:700},
+];
+var SEA_DATA = [
+  {id:"sea0", palier:"Tome 1 terminé (3 séances)",  detail:"fin juin",    seancesMin:3},
+  {id:"sea1", palier:"Mi-parcours (séance 11)",      detail:"fin juillet", seancesMin:11},
+  {id:"sea2", palier:"Tome 2 terminé (11 séances)",  detail:"fin juillet", seancesMin:11},
+  {id:"sea3", palier:"Été complet (21 séances)",     detail:"28 août",     seancesMin:21},
+];
+var LEC_DATA = [
+  {id:"lec0", palier:"Les Rues Fantasques",     detail:"quiz 1er juillet"},
+  {id:"lec1", palier:"Le Royaume de Kensuké",   detail:"quiz 23 juillet"},
+  {id:"lec2", palier:"La Rivière à l'envers",   detail:"quiz 7 août"},
+  {id:"lec3", palier:"Le Passeur",              detail:"quiz 28 août"},
+];
+
+var NIVEAUX=[
+  {num:1,name:"Recrue",    color:"#64748B",bg:"#2D2D4E"},
+  {num:2,name:"Apprenti",  color:"#2F9E44",bg:"#1B4D2A"},
+  {num:3,name:"Aventurier",color:"#1971C2",bg:"#0D3A6B"},
+  {num:4,name:"Stratège",  color:"#7048E8",bg:"#3C2080"},
+  {num:5,name:"Expert",    color:"#F08C00",bg:"#5C3600"},
+  {num:6,name:"Maître",    color:"#E03131",bg:"#5C1010"},
+  {num:7,name:"Champion",  color:"#D6336C",bg:"#60163A"},
+  {num:8,name:"Légende",   color:"#FFD43B",bg:"#5C4400"},
+];
+var XP_PER=100;
+
+/* ---- récompenses reçues (cochées) ---- */
+var claimed = {};
+function loadClaimed(){ try{var c=localStorage.getItem(KEY_CLAIMED); if(c) claimed=JSON.parse(c);}catch(e){} }
+function saveClaimed(){ try{localStorage.setItem(KEY_CLAIMED,JSON.stringify(claimed));}catch(e){} }
+
+function escapeHTML(s){
+  return String(s).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;");
+}
+function rewardText(id){
+  var el=document.getElementById(id);
+  if(el) return el.value||"";
+  try{var saved=JSON.parse(localStorage.getItem(KEY_REWARDS)||"{}"); return saved[id]||"";}catch(e){return "";}
+}
+
+/* ---- Espace maman ---- */
+function updateMomBar(){
+  var bar=document.getElementById("mom-bar");
+  if(momMode){
+    bar.innerHTML='<div class="mom-on">👩 Espace maman activé — tu peux tout modifier'+
+      '<button class="mom-lock-btn" onclick="lockMom()">🔒 Quitter</button></div>';
+  } else {
+    bar.innerHTML='<button class="mom-open-btn" onclick="askMomCode()">🔒 Espace maman</button>'+
+      '<div class="mom-hint">Les récompenses sont définies et validées par un adulte.</div>';
+  }
+}
+function askMomCode(){
+  var c=prompt("👩 Espace maman\n\nEntre le code à 4 chiffres :");
+  if(c===null) return;
+  if(c===CODE_MAMAN){ momMode=true; build(); }
+  else alert("❌ Code incorrect.");
+}
+function lockMom(){ momMode=false; build(); }
+function updateMomVisibility(){
+  var els=document.querySelectorAll(".mom-only");
+  for(var i=0;i<els.length;i++){ els[i].style.display = momMode ? "" : "none"; }
+}
+
+/* Champ récompense (modifiable seulement en mode maman) */
+function momInput(id){
+  var ph = momMode ? "Ta récompense…" : "à définir par maman";
+  var ro = momMode ? "" : " readonly";
+  return '<input class="inp" id="'+id+'" placeholder="'+ph+'"'+ro+' oninput="onRewardInput()"/>';
+}
+
+/* Cellule d'état pour un palier (XP / séances) */
+function stateCellThreshold(id, reached){
+  if(claimed[id]){
+    return momMode
+      ? '<button class="s-ico s-done" title="Reçue — clique pour annuler" onclick="toggleClaim(\''+id+'\')">✅</button>'
+      : '<span class="s-ico" title="Déjà reçue">✅</span>';
+  }
+  if(reached){
+    return momMode
+      ? '<button class="s-ico s-claim" title="Nathan l\'a eue ? Clique pour cocher" onclick="toggleClaim(\''+id+'\')">🎁</button>'
+      : '<span class="s-ico s-claim" title="Débloqué ! À valider par maman">🎁</span>';
+  }
+  return '<span class="s-ico s-locked" title="Pas encore atteint">🔒</span>';
+}
+/* Cellule d'état pour un livre */
+function stateCellBook(id){
+  if(claimed[id]){
+    return momMode
+      ? '<button class="s-ico s-done" title="Reçue — clique pour annuler" onclick="toggleClaim(\''+id+'\')">✅</button>'
+      : '<span class="s-ico" title="Déjà reçue">✅</span>';
+  }
+  return momMode
+    ? '<button class="s-ico" title="Coche quand la récompense a été donnée" onclick="toggleClaim(\''+id+'\')">○</button>'
+    : '<span class="s-ico s-locked" title="À valider par maman">○</span>';
+}
+
+function makeXPRow(item, currentXP) {
+  var row=document.createElement("div");
+  row.className="row col3";
+  var reached=currentXP>=item.threshold;
+  var dot=item.color?'<span class="dot" style="background:'+item.color+'"></span>':'';
+  row.innerHTML=
+    '<div class="cell"><div class="palier">'+dot+item.palier+'</div>'+
+    (item.detail?'<div class="detail">'+item.detail+'</div>':'')+
+    '</div>'+
+    '<div class="cell">'+momInput(item.id)+'</div>'+
+    '<div class="cell state" id="st-'+item.id+'">'+stateCellThreshold(item.id, reached)+'</div>';
+  return row;
+}
+function makeSeaRow(item, currentSeances) {
+  var row=document.createElement("div");
+  row.className="row col3";
+  var reached=currentSeances>=(item.seancesMin||0);
+  row.innerHTML=
+    '<div class="cell"><div class="palier">'+item.palier+'</div>'+
+    (item.detail?'<div class="detail">'+item.detail+'</div>':'')+
+    '</div>'+
+    '<div class="cell">'+momInput(item.id)+'</div>'+
+    '<div class="cell state" id="st-'+item.id+'">'+stateCellThreshold(item.id, reached)+'</div>';
+  return row;
+}
+function makeLecRow(item) {
+  var row=document.createElement("div");
+  row.className="row col3";
+  row.innerHTML=
+    '<div class="cell"><div class="palier">'+item.palier+'</div>'+
+    (item.detail?'<div class="detail">'+item.detail+'</div>':'')+
+    '</div>'+
+    '<div class="cell">'+momInput(item.id)+'</div>'+
+    '<div class="cell state" id="st-'+item.id+'">'+stateCellBook(item.id)+'</div>';
+  return row;
+}
+
+function getXPState(){
+  try{var s=localStorage.getItem(KEY_XP);if(s)return JSON.parse(s);}catch(e){}
+  return {xp:0,seances:0};
+}
+function currentXPState(){ var s=getXPState(); return {xp:s.xp||0, seances:s.seances||0}; }
+
+function build(){
+  var xpState=getXPState();
+  var xp=xpState.xp||0;
+  var seances=xpState.seances||0;
+  var xr=document.getElementById("xp-rows");
+  var sr=document.getElementById("sea-rows");
+  var lr=document.getElementById("lec-rows");
+  xr.innerHTML=""; sr.innerHTML=""; lr.innerHTML="";
+  XP_DATA.forEach(function(d){xr.appendChild(makeXPRow(d,xp));});
+  SEA_DATA.forEach(function(d){sr.appendChild(makeSeaRow(d,seances));});
+  LEC_DATA.forEach(function(d){lr.appendChild(makeLecRow(d));});
+  try{var saved=localStorage.getItem(KEY_REWARDS);if(saved)restore(JSON.parse(saved));}catch(e){}
+  updateXPBanner(xp,seances);
+  buildAReclamer(xp,seances);
+  applyClaimedStyling();
+  updateMomVisibility();
+  updateMomBar();
+}
+
+function updateXPBanner(xp,seances){
+  var idx=Math.min(Math.floor(xp/XP_PER),NIVEAUX.length-1);
+  var lvl=NIVEAUX[idx];
+  var inLvl=Math.min(xp-idx*XP_PER,XP_PER);
+  var b=document.getElementById("xp-badge");
+  b.textContent=lvl.num; b.style.color=lvl.color; b.style.borderColor=lvl.color; b.style.background=lvl.bg;
+  document.getElementById("xp-name").textContent="Niveau "+lvl.num+" — "+lvl.name;
+  document.getElementById("xp-name").style.color=lvl.color;
+  document.getElementById("xp-total").textContent=xp+" XP au total · "+seances+" séances validées";
+  var bar=document.getElementById("xp-bar");
+  bar.style.width=((inLvl/XP_PER)*100)+"%";
+  bar.style.background="linear-gradient(90deg,"+lvl.color+",#FFD43B)";
+  var dot=document.getElementById("sync-dot");
+  var txt=document.getElementById("sync-txt");
+  if(localStorage.getItem(KEY_XP)){
+    dot.className="sync-dot sync-ok";
+    txt.textContent="Synchronisé avec le fichier XP · mise à jour automatique ✓";
+  } else {
+    dot.className="sync-dot sync-no";
+    txt.textContent="Fichier XP non détecté — ouvre XP_Nathan.html pour synchroniser";
+  }
+}
+
+/* Encadré « à réclamer » : paliers atteints + récompense remplie + pas encore reçue */
+function buildAReclamer(xp, seances){
+  var box=document.getElementById("areclamer");
+  var list=document.getElementById("areclamer-list");
+  var sub=document.getElementById("areclamer-sub");
+  list.innerHTML="";
+  var items=[];
+  XP_DATA.forEach(function(d){
+    var txt=rewardText(d.id).trim();
+    if(xp>=d.threshold && txt && !claimed[d.id]) items.push({id:d.id,label:d.palier,text:txt});
+  });
+  SEA_DATA.forEach(function(d){
+    var txt=rewardText(d.id).trim();
+    if(seances>=(d.seancesMin||0) && txt && !claimed[d.id]) items.push({id:d.id,label:d.palier,text:txt});
+  });
+  if(!items.length){ box.style.display="none"; return; }
+  box.style.display="block";
+  sub.textContent = momMode
+    ? "Paliers atteints ! Clique sur « Reçue » quand la récompense a été donnée."
+    : "Bravo Nathan, tu as débloqué ces récompenses ! Maman les validera dans l'espace maman.";
+  items.forEach(function(it){
+    var el=document.createElement("div");
+    el.className="areclamer-item";
+    var action = momMode
+      ? '<button class="ar-btn" onclick="toggleClaim(\''+it.id+'\')">✓ Reçue</button>'
+      : '<span class="ar-lock">🔒 à valider par maman</span>';
+    el.innerHTML='<div class="ar-info"><div class="ar-txt">🎉 '+escapeHTML(it.text)+'</div>'+
+                 '<div class="ar-sub">'+it.label+'</div></div>'+action;
+    list.appendChild(el);
+  });
+}
+function refreshAReclamer(){ var st=currentXPState(); buildAReclamer(st.xp, st.seances); }
+
+function applyClaimedStyling(){
+  var ids=[];
+  XP_DATA.forEach(function(d){ids.push(d.id);});
+  SEA_DATA.forEach(function(d){ids.push(d.id);});
+  LEC_DATA.forEach(function(d){ids.push(d.id);});
+  ids.forEach(function(id){
+    var el=document.getElementById(id);
+    if(el){ if(claimed[id]) el.classList.add("claimed"); else el.classList.remove("claimed"); }
+  });
+}
+
+function toggleClaim(id){
+  if(!momMode) return;   /* sécurité : seulement en espace maman */
+  try{localStorage.setItem(KEY_REWARDS,JSON.stringify(collect()));}catch(e){}
+  claimed[id]=!claimed[id];
+  saveClaimed();
+  build();
+}
+
+function collect(){
+  var d={};
+  [XP_DATA,SEA_DATA,LEC_DATA].forEach(function(arr){
+    arr.forEach(function(item){var el=document.getElementById(item.id);if(el)d[item.id]=el.value;});
+  });
+  return d;
+}
+function restore(data){
+  Object.keys(data).forEach(function(k){var el=document.getElementById(k);if(el)el.value=data[k];});
+}
+
+function onRewardInput(){ if(!momMode) return; schedSave(); refreshAReclamer(); }
+
+function sauvegarder(){
+  try{
+    localStorage.setItem(KEY_REWARDS,JSON.stringify(collect()));
+    var st=document.getElementById("st");
+    st.textContent="✅ Sauvegardé !"; st.style.color="#2B8A3E";
+    setTimeout(function(){st.textContent="";},2000);
+  }catch(e){document.getElementById("st").textContent="⚠ Sauvegarde impossible.";}
+}
+function schedSave(){
+  clearTimeout(STORE_TIMER);
+  STORE_TIMER=setTimeout(sauvegarder,900);
+}
+function effacer(){
+  if(!momMode) return;
+  if(!confirm("Effacer toutes les récompenses ?"))return;
+  localStorage.removeItem(KEY_REWARDS);
+  claimed={}; saveClaimed();
+  [XP_DATA,SEA_DATA,LEC_DATA].forEach(function(arr){
+    arr.forEach(function(item){var el=document.getElementById(item.id);if(el)el.value="";});
+  });
+  build();
+}
+
+/* Sync en temps réel */
+window.addEventListener("storage",function(e){
+  if(e.key===KEY_XP || e.key===KEY_CLAIMED){
+    if(e.key===KEY_CLAIMED){ try{claimed=JSON.parse(e.newValue||"{}");}catch(x){} }
+    try{localStorage.setItem(KEY_REWARDS,JSON.stringify(collect()));}catch(x){}
+    build();
+  }
+});
+
+loadClaimed();
+build();
+</script>
+</body>
+</html>

@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Cahier de vacances — Nathan 2026</title>
+<style>
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body { font-family: Arial, sans-serif; background: #0F0F23; color: #E2E8F0;
+       min-height: 100vh; display: flex; flex-direction: column; align-items: center;
+       justify-content: center; padding: 24px 16px; }
+h1 { font-size: 22px; font-weight: bold; color: white; text-align: center; margin-bottom: 6px; }
+.sub { font-size: 14px; color: #64748B; text-align: center; margin-bottom: 32px; }
+.grid { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; width: 100%; max-width: 420px; }
+.card { background: #1A1A2E; border: 1px solid #2D2D4E; border-radius: 14px;
+        padding: 22px 16px; text-decoration: none; text-align: center;
+        transition: transform .15s, border-color .15s; display: block; }
+.card:hover { transform: translateY(-3px); border-color: #4D4D8E; }
+.card-icon { font-size: 36px; margin-bottom: 10px; }
+.card-title { font-size: 15px; font-weight: bold; margin-bottom: 4px; }
+.card-desc  { font-size: 12px; color: #64748B; }
+.card.xp     { border-color: #1971C2; }
+.card.xp .card-title { color: #93C5FD; }
+.card.rewards { border-color: #E8590C; }
+.card.rewards .card-title { color: #FCA5A5; }
+.card.audio  { border-color: #2F9E44; }
+.card.audio .card-title  { color: #86EFAC; }
+.card-full { grid-column: 1 / -1; }
+.footer { font-size: 11px; color: #2D2D4E; margin-top: 28px; text-align: center; }
+</style>
+</head>
+<body>
+<h1>⚡ Cahier de vacances de Nathan</h1>
+<p class="sub">Été 2026 · Entrée en 4ᵉ</p>
+
+<div class="grid">
+  <a href="XP_Nathan.html" class="card xp">
+    <div class="card-icon">⚡</div>
+    <div class="card-title">Mes points XP</div>
+    <div class="card-desc">Ajouter mes points après chaque activité</div>
+  </a>
+  <a href="Recompenses_Nathan.html" class="card rewards">
+    <div class="card-icon">🏆</div>
+    <div class="card-title">Mes récompenses</div>
+    <div class="card-desc">Voir mes récompenses · espace maman 🔒</div>
+  </a>
+  <a href="Lecteur_audio_Nathan.html" class="card audio card-full">
+    <div class="card-icon">🔊</div>
+    <div class="card-title">Lecteur audio</div>
+    <div class="card-desc">Écouter les dictées, l'anglais et l'espagnol phrase par phrase</div>
+  </a>
+</div>
+
+<div class="footer">Tous tes points et récompenses se synchronisent automatiquement entre les pages.</div>
+</body>
+</html>
